@@ -4,7 +4,7 @@ pipeline {
     stages {
         stage('Checkout') {
             steps {
-                git branch: 'main', url: 'https://github.com/Tannvi/WorldOfGames'  // Replace with your details
+                git branch: 'master', url: 'https://github.com/Tannvi/WorldOfGames'  // Replace with your details
             }
         }
 
