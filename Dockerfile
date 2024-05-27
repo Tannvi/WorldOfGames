@@ -17,4 +17,4 @@ EXPOSE 5000
 
 # Set the command to run your Flask app (adjust the script name if different)
 # Replace with your main script if different
-CMD ["python", "MainScores.py"]
+CMD ["python", "MainGame.py"]
