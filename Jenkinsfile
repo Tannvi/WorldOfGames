@@ -48,8 +48,8 @@ pipeline {
 
                     if (testResult == 'SUCCESS') {
                         // Push image to Docker Hub (replace with your details)
-                        sh 'docker login -u your-dockerhub-username -p your-dockerhub-password'
-                        sh 'docker push your-dockerhub-username/scoreservice:latest'
+                        sh 'docker login -u tannvi -p Tannvisingh@19'
+                        sh 'docker push tannvi/scoreservice:latest'
                     } else {
                         // Handle failure (e.g., send notification)
                         echo 'Tests failed. Image not pushed to Docker Hub.'
