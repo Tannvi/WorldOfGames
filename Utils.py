@@ -10,4 +10,4 @@ def clear_screen():
         os.system("clear")  # Linux/macOS
 
 # Example usage (uncomment to test)
-# clear_screen()
+clear_screen()
