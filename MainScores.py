@@ -1,24 +1,26 @@
-from flask import Flask, render_template
-
 from Score import read_score, BAD_RETURN_CODE
+from flask import Flask, render_template
 
 app = Flask(__name__)
 
 @app.route("/")
-def serve_score():
-  """Reads the score from file and returns an HTML response."""
+def score_server():
+  """
+  Reads the score from scores.txt and returns an HTML template.
+
+  Returns:
+      str: Rendered HTML template with the score or an error message.
+  """
   try:
-    score = read_score()
-    if score == BAD_RETURN_CODE:
-      # Error reading score, display error message
-      return render_template("score.html", score="Error reading score")
-    else:
-      return render_template("score.html", score=score)
-  except Exception as e:
-    print(f"Unexpected error: {e}")
-    return render_template("score.html", score="Internal server error")
+    with open("Scores.txt", "r") as f:
+      score = int(f.read())
+  except (FileNotFoundError, ValueError) as e:
+    error = f"Error reading score: {e}"
+    return render_template("score.html", score=None, error=error)
+
+  return render_template("score.html", score=score, error=None)
 
 if __name__ == "__main__":
-  app.run(debug=True)  # Run in debug mode for development (optional)
+  app.run(debug=True)
 
 
