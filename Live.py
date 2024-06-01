@@ -1,7 +1,8 @@
 from MemoryGame import MemoryGame
 from GuessGame import GuessGame
 from CurrencyRouletteGame import CurrencyRouletteGame
-from Score import add_score
+from Score import difficulty
+
 
 def welcome(name):
   """Greets the user by name and welcomes them to the World of Games."""
@@ -48,18 +49,24 @@ def load_game():
     return  # Exit the function if an invalid choice is made internally
 
   # Play the game
+
+  # Check if the user won the game (replace with your winning condition)
   win = game.play()
-
-  # Update score if the user won
   if win:
-    add_score(difficulty_level)  # Call add_score function to update score
+    try:
+      # Import add_score function for better modularity
+      from Score import add_score
 
-  if win:
-    print("Congratulations! You won the game!")
-  else:
-    print("Better luck next time!")
+      # User won, call add_score function (replace game_score with the actual score obtained)
+      add_score(difficulty)
+      print("Congratulations! You won and your score has been updated.")
+    except (ImportError, FileNotFoundError, ValueError) as e:
+      print(f"Error updating score: {e}")
+      print("Continuing the game...")  # Consider user preference (continue/exit)
+
+
 
 # Example usage (uncomment to test)
-# name = input("Enter your name: ")
-# print(welcome(name))
-# load_game()
+name = input("Enter your name: ")
+print(welcome(name))
+load_game()
