@@ -34,11 +34,11 @@ def test_scores_service(url):
 
 # Example usage (uncomment to test)
 # Replace with the actual URL of your deployed score service
-# service_url = "http://localhost:5000/"  # Assuming Flask app runs on port 5000
-# if test_scores_service(service_url):
-#   print("Score service test passed!")
-# else:
-#   print("Score service test failed!")
+  service_url = "http://localhost:5000/"  # Assuming Flask app runs on port 5000
+  if test_scores_service(service_url):
+    print("Score service test passed!")
+  else:
+    print("Score service test failed!")
 
 
 def main():
