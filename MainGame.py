@@ -1,21 +1,21 @@
 from Live import load_game, welcome
+from MainScores import score_server, app
 
-# Welcome the user
-print(welcome("Guy"))
+# Get username (optional)
+user_name = input("Enter your name (or press Enter to continue): ")
 
-# Load the game and get user choices
-game_choice, difficulty_level = load_game()
+# Print welcome message
+print(welcome(user_name if user_name else "Player"))  # Use user name if provided, otherwise default to "Player"
 
-# Print user selections (optional)
-print(f"\nYou chose game {game_choice} with difficulty {difficulty_level}")
+# Load and start the game
+load_game()
 
-# Call the specific game function based on the user's choice (not implemented here)
-# This part would likely involve additional logic and potentially other Python files
-# for each game
+from MainScores import score_server  # Assuming MainScores.py is in the same directory
 
-# Example (placeholder):
-if game_choice == 1:
-  print("Starting Memory Game...")
-  # Implement Memory Game logic here
-else:
-  print(f"Game {game_choice} is not yet implemented.")
+# ...t your game logic ...
+
+if score_server:
+    with app.app_context():  # Create temporary Flask application context
+        score_server()
+
+

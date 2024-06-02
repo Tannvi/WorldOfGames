@@ -8,6 +8,3 @@ def clear_screen():
         os.system("cls")
     else:
         os.system("clear")  # Linux/macOS
-
-# Example usage (uncomment to test)
-clear_screen()

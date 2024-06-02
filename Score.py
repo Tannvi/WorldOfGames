@@ -27,8 +27,3 @@ def add_score(difficulty):
     new_score = current_score + points_earned
     write_score(new_score)
     return new_score
-
-# Example usage (uncomment to test)
-difficulty = 3
-new_score = add_score(difficulty)
-print(f"You earned {POINTS_PER_WIN(difficulty)} points! Your new score is {new_score}")
