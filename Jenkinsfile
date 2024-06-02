@@ -24,7 +24,7 @@ pipeline {
         stage('Run Application (Test)') {
             steps {
                 script {
-                    def containerName = 'my-docker-image-test'
+                    def containerName = 'myt-docker-image-test'
                     def workspaceDir = pwd()
 
                     def args = [
