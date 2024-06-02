@@ -25,9 +25,11 @@ pipeline {
             steps {
                 script {
                     def containerName = 'my-docker-image-test'
+                    def workspaceDir = pwd()
+
                     def args = [
-                        "-v ${pwd()}:/app",
-                        "-v ${pwd()}/Scores.txt:/app/Scores.txt",
+                        "-v \"${workspaceDir}:/app\"",
+                        "-v \"${workspaceDir}/Scores.txt:/app/Scores.txt\"",
                         "-d",
                         "-p 5000:5000",
                         "--name $containerName",
