@@ -25,29 +25,44 @@ pipeline {
             steps {
                 script {
                     def containerName = 'my-docker-image-test'
-                    docker run(
-                        // Mount current directory as /app and a dummy Scores.txt
+                    def args = [
                         "-v ${pwd()}:/app",
                         "-v ${pwd()}/Scores.txt:/app/Scores.txt",
-                        "-d",  // Run in detached mode
-                        "-p 5000:5000",  // Map container port 8777 to host port 8777
+                        "-d",
+                        "-p 5000:5000",
                         "--name $containerName",
-                        "my-docker-image"  // Use the built image
-                    )
+                        "my-docker-image"
+                    ]
+
+                    def argsString = args.join(' ')
+
+                    if (isUnix()) {
+                        sh "docker run ${argsString}"
+                    } else {
+                        bat "docker run ${argsString}"
+                    }
 
                     // Delay to allow app startup (adjust if needed)
                     sleep 5
 
                     // Run tests (assuming e2e.py is in the workspace)
-                    sh 'python e2e.py http://localhost:5000'
+                    if (isUnix()) {
+                        sh 'python e2e.py http://localhost:5000'
+                    } else {
+                        bat 'python e2e.py http://localhost:5000'
+                    }
 
                     // Stop the container
-                    sh "docker stop $containerName"
+                    if (isUnix()) {
+                        sh "docker stop $containerName"
+                    } else {
+                        bat "docker stop $containerName"
+                    }
                 }
             }
         }
 
-    stage('Finalize (Optional)') {
+        stage('Finalize (Optional)') {
             steps {
                 script {
                     // Get build result (success/failure) from previous stage
@@ -55,8 +70,13 @@ pipeline {
 
                     if (testResult == 'SUCCESS') {
                         // Push image to Docker Hub (replace with your details)
-                        sh 'docker login -u tannvi -p Tannvisingh@19'
-                        sh 'docker push tannvi/my-docker-image'
+                        if (isUnix()) {
+                            sh 'docker login -u tannvi -p Tannvisingh@19'
+                            sh 'docker push tannvi/my-docker-image'
+                        } else {
+                            bat 'docker login -u tannvi -p Tannvisingh@19'
+                            bat 'docker push tannvi/my-docker-image'
+                        }
                     } else {
                         // Handle failure (e.g., send notification)
                         echo 'Tests failed. Image not pushed to Docker Hub.'
