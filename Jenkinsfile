@@ -49,6 +49,13 @@ pipeline {
 
                     // Check if e2e.py exists before attempting to run it
                     if (fileExists("${workspaceDir}/e2e.py")) {
+                        // Install required Python packages
+                        if (isUnix()) {
+                            sh 'pip install -r requirements.txt'
+                        } else {
+                            bat "\"C:\\Users\\91741\\AppData\\Local\\Programs\\Python\\Python312\\Scripts\\pip.exe\" install -r requirements.txt"
+                        }
+
                         // Run tests
                         if (isUnix()) {
                             sh "python e2e.py http://localhost:5000"
@@ -88,4 +95,3 @@ pipeline {
         }
     }
 }
-
