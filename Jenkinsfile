@@ -69,6 +69,12 @@ pipeline {
                     }
 
                     if (!appRunning) {
+                        echo 'Fetching Docker container logs...'
+                        if (isUnix()) {
+                            sh "docker logs $containerName"
+                        } else {
+                            bat "docker logs $containerName"
+                        }
                         error 'Application failed to start within the timeout period'
                     }
 
