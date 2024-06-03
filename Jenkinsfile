@@ -51,7 +51,7 @@ pipeline {
                     if (isUnix()) {
                         sh 'python e2e.py http://localhost:5000'
                     } else {
-                        bat 'python e2e.py http://localhost:5000'
+                        bat '"C:\Users\91741\K8s-configuration\.venv\Scripts\python.exe" e2e.py http://localhost:5000'
                     }
 
                     // Stop the container
