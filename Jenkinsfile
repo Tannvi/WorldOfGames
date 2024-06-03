@@ -47,6 +47,31 @@ pipeline {
                     // Delay to allow app startup (adjust if needed)
                     sleep 5
 
+                    // Check if application is running
+                    def maxRetries = 10
+                    def retryCount = 0
+                    def appRunning = false
+
+                    while (retryCount < maxRetries) {
+                        if (isUnix()) {
+                            appRunning = sh(script: "curl -s -o /dev/null -w '%{http_code}' http://localhost:5000", returnStatus: true) == 200
+                        } else {
+                            appRunning = bat(script: "curl -s -o NUL -w %%{http_code} http://localhost:5000", returnStatus: true) == 200
+                        }
+                        if (appRunning) {
+                            echo 'Application is running'
+                            break
+                        } else {
+                            echo 'Waiting for application to start...'
+                            sleep 5
+                            retryCount++
+                        }
+                    }
+
+                    if (!appRunning) {
+                        error 'Application failed to start within the timeout period'
+                    }
+
                     // Check if e2e.py exists before attempting to run it
                     if (fileExists("${workspaceDir}/e2e.py")) {
                         // Install required Python packages
