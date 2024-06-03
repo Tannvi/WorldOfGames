@@ -49,9 +49,9 @@ pipeline {
 
                     // Run tests (assuming e2e.py is in the workspace)
                     if (isUnix()) {
-                        sh 'Python e2e.py http://localhost:5000'
+                        sh 'python e2e.py http://localhost:5000'
                     } else {
-                        bat 'Python e2e.py http://localhost:5000'
+                        bat 'python e2e.py http://localhost:5000'
                     }
 
                     // Stop the container
