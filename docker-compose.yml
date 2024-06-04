@@ -1,19 +1,1 @@
-version: '3.8'  # Specify the Docker Compose version
 
-services:
-  scoreservice:
-    build: .  # Build the image from the current directory (Dockerfile)
-    volumes:
-      - .:/app  # Mount the current directory as /app in the container
-    ports:
-      - "5000:5000"  # Map container port 5000 to host port 5000
-    depends_on:
-      - scoresdata  # Ensure scoresdata service starts before scoreservice
-
-  scoresdata:  # Optional service for persisting scores data
-    image: postgres:latest  # Use a separate container for database (optional)
-    volumes:
-      - scoresdata:/var/lib/postgresql/data  # Persist data volume for scores (optional)
-
-volumes:
-  scoresdata:  # Optional named volume for scores data (optional)
