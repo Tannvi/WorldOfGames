@@ -3,7 +3,7 @@ pipeline {
 
     environment {
         USER_NAME = 'Tannvi'
-        GAME_CHOICE = '2'
+        GAME_CHOICE = '1'
         DIFFICULTY_LEVEL = '1'
         MEMORY_GAME_USER_LIST = '1,2,3'
         USER_GUESS = '1'
@@ -34,7 +34,7 @@ pipeline {
             steps {
                 script {
                     // Delay to allow app startup (adjust if needed)
-                    sleep 30
+                    sleep 50
                 }
             }
         }
@@ -44,7 +44,7 @@ pipeline {
                 script {
                     def appRunning = false
                     def retryCount = 0
-                    def maxRetries = 15
+                    def maxRetries = 10
 
                     while (retryCount < maxRetries) {
                         if (isUnix()) {
@@ -57,7 +57,7 @@ pipeline {
                             break
                         } else {
                             echo 'Waiting for application to start...'
-                            sleep 10
+                            sleep 5
                             retryCount++
                         }
                     }
@@ -79,9 +79,10 @@ pipeline {
             steps {
                 script {
                     def workspaceDir = pwd()
+                    def testScriptPath = "${workspaceDir}/tests/e2e.py"
 
                     // Check if e2e.py exists before attempting to run it
-                    if (fileExists("${workspaceDir}/e2e.py")) {
+                    if (fileExists(testScriptPath)) {
                         // Install required Python packages
                         if (isUnix()) {
                             sh 'pip install -r requirements.txt'
@@ -91,12 +92,12 @@ pipeline {
 
                         // Run tests
                         if (isUnix()) {
-                            sh "python e2e.py http://localhost:5000"
+                            sh "python ${testScriptPath} http://localhost:5000"
                         } else {
-                            bat "\"C:\\Users\\91741\\AppData\\Local\\Programs\\Python\\Python312\\python.exe\" e2e.py http://localhost:5000"
+                            bat "\"C:\\Users\\91741\\AppData\\Local\\Programs\\Python\\Python312\\python.exe\" ${testScriptPath} http://localhost:5000"
                         }
                     } else {
-                        error "e2e.py not found in workspace."
+                        error "e2e.py not found in workspace/tests directory."
                     }
                 }
             }
