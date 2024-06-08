@@ -3,7 +3,7 @@ pipeline {
 
     environment {
         USER_NAME = 'Tannvi'
-        GAME_CHOICE = '1'
+        GAME_CHOICE = '2'
         DIFFICULTY_LEVEL = '1'
         MEMORY_GAME_USER_LIST = '1,2,3'
         USER_GUESS = '1'
