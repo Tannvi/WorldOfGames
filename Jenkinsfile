@@ -22,9 +22,9 @@ pipeline {
             steps {
                 script {
                     if (isUnix()) {
-                        sh 'docker build -t my-docker-image .'
+                        sh 'docker-compose -f docker-compose.yaml up --build -d'
                     } else {
-                        bat 'docker build -t my-docker-image .'
+                        bat 'docker-compose -f docker-compose.yaml up --build -d'
                     }
                 }
             }
