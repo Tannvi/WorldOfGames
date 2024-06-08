@@ -1,0 +1,13 @@
+# docker-compose/docker-compose.yml
+
+version: '3.8'
+
+services:
+  scoreservice:
+    build:
+      context: ../docker  # Path to the Dockerfile
+    volumes:
+      - ../:/app  # Mount the project directory as /app in the container
+    ports:
+      - "5000:5000"  # Map container port 5000 to host port 5000
+
