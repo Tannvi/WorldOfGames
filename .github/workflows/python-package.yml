@@ -26,8 +26,8 @@ jobs:
 
       - name: Build and push Docker image
         run: |
-          docker build -t tannvi/project .
-          docker push tannvi/project
+          docker build -t tannvi/getting-started .
+          docker push tannvi/getting-started
 
         env:
           DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
