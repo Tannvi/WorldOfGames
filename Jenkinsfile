@@ -1,7 +1,7 @@
 pipeline {
     agent any
 
-   environment {
+    environment {
         USER_NAME = 'Tannvi'
         GAME_CHOICE = '1'
         DIFFICULTY_LEVEL = '1'
@@ -18,48 +18,33 @@ pipeline {
             }
         }
 
-        stage('Build Docker Image') {
+        stage('Build and Run Docker Compose') {
             steps {
                 script {
                     if (isUnix()) {
-                        sh 'docker-compose -f docker-compose.yaml up --build -d'
+                        sh 'docker-compose up --build -d'
                     } else {
-                        bat 'docker-compose -f docker-compose.yaml up --build -d'
+                        bat 'docker-compose up --build -d'
                     }
                 }
             }
         }
 
-        stage('Run Application (Test)') {
+        stage('Wait for Application to Start') {
             steps {
                 script {
-                    def containerName = 'my-docker-image-test'
-                    def workspaceDir = pwd()
-
-                    def args = [
-                        "-v \"${workspaceDir}:/app\"",
-                        "-v \"${workspaceDir}/Scores.txt:/app/Scores.txt\"",
-                        "-d",
-                        "-p 5000:5000",
-                        "--name $containerName",
-                        "my-docker-image"
-                    ]
-
-                    def argsString = args.join(' ')
-
-                    if (isUnix()) {
-                        sh "docker run ${argsString}"
-                    } else {
-                        bat "docker run ${argsString}"
-                    }
-
                     // Delay to allow app startup (adjust if needed)
-                    sleep 5
+                    sleep 10
+                }
+            }
+        }
 
-                    // Check if application is running
-                    def maxRetries = 10
-                    def retryCount = 0
+        stage('Check Application Status') {
+            steps {
+                script {
                     def appRunning = false
+                    def retryCount = 0
+                    def maxRetries = 10
 
                     while (retryCount < maxRetries) {
                         if (isUnix()) {
@@ -80,12 +65,20 @@ pipeline {
                     if (!appRunning) {
                         echo 'Fetching Docker container logs...'
                         if (isUnix()) {
-                            sh "docker logs $containerName"
+                            sh "docker-compose logs"
                         } else {
-                            bat "docker logs $containerName"
+                            bat "docker-compose logs"
                         }
                         error 'Application failed to start within the timeout period'
                     }
+                }
+            }
+        }
+
+        stage('Run Tests') {
+            steps {
+                script {
+                    def workspaceDir = pwd()
 
                     // Check if e2e.py exists before attempting to run it
                     if (fileExists("${workspaceDir}/e2e.py")) {
@@ -105,13 +98,6 @@ pipeline {
                     } else {
                         error "e2e.py not found in workspace."
                     }
-
-                    // Stop the container
-                    if (isUnix()) {
-                        sh "docker stop $containerName"
-                    } else {
-                        bat "docker stop $containerName"
-                    }
                 }
             }
         }
@@ -130,6 +116,19 @@ pipeline {
                         // Handle failure (e.g., send notification)
                         echo 'Tests failed. Image not pushed to Docker Hub.'
                     }
+                }
+            }
+        }
+    }
+
+    post {
+        always {
+            script {
+                // Ensure that Docker containers are brought down after the job
+                if (isUnix()) {
+                    sh 'docker-compose down'
+                } else {
+                    bat 'docker-compose down'
                 }
             }
         }
