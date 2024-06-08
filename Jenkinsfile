@@ -34,7 +34,7 @@ pipeline {
             steps {
                 script {
                     // Delay to allow app startup (adjust if needed)
-                    sleep 100
+                    sleep 400
                 }
             }
         }
