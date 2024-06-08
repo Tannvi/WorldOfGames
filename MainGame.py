@@ -14,7 +14,7 @@ if __name__ == '__main__':
     load_game()
     # Keep the application running
     while True:
-        time.sleep(10)
+        time.sleep(20)
 
 
 from MainScores import score_server  # Assuming MainScores.py is in the same directory
