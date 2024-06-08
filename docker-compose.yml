@@ -1,13 +1,28 @@
-# docker-compose/docker-compose.yml
-
 version: '3.8'
 
 services:
   scoreservice:
     build:
-      context: ../docker  # Path to the Dockerfile
+      context: .  # Assuming the Dockerfile is in the root of the project
     volumes:
-      - ../:/app  # Mount the project directory as /app in the container
+      - .:/app  # Mount the current directory as /app in the container
     ports:
       - "5000:5000"  # Map container port 5000 to host port 5000
+    environment:
+      - USER_NAME=Tannvi  # Provide a default username here
+      - GAME_CHOICE=2  # Set default game choice (1: MemoryGame, 2: GuessGame, 3: CurrencyRoulette)
+      - DIFFICULTY_LEVEL=1  # Set default difficulty level (1-5)
+      - MEMORY_GAME_USER_LIST=1,2,3  # Comma-separated list of numbers remembered by the user
+      - USER_GUESS=1  # Set a default guess for GuessGame
+    depends_on:
+      - scoresdata  # Ensure scoresdata service starts before scoreservice
 
+  scoresdata:
+    image: postgres:latest
+    environment:
+      - POSTGRES_PASSWORD=yourpassword  # Set your desired password here
+    volumes:
+      - scoresdata:/var/lib/postgresql/data
+
+volumes:
+  scoresdata:
