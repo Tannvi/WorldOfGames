@@ -1,4 +1,6 @@
 import random
+import os
+
 
 class GuessGame:
     def __init__(self, difficulty):
@@ -11,6 +13,10 @@ class GuessGame:
 
     def get_guess_from_user(self):
         """Prompts the user for a guess and validates it."""
+        user_guess = os.getenv('USER_GUESS')
+        if user_guess:
+            return int(user_guess)
+
         while True:
             try:
                 guess = int(input("Guess a number between 1 and {}: ".format(self.difficulty)))
@@ -37,12 +43,4 @@ class GuessGame:
                 break
             else:
                 print("Incorrect guess. Try again.")
-
-
-
-
-
-
-
-
-
+                break

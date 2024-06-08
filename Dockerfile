@@ -12,6 +12,7 @@ RUN pip install -r requirements.txt
 # Copy your Flask application code and Scores.txt
 COPY . .
 
+
 # Expose the port where your Flask app listens (replace 5000 if needed)
 EXPOSE 5000
 

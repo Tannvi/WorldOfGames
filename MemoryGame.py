@@ -1,5 +1,6 @@
 import random
 import time
+import os
 
 class MemoryGame:
     def __init__(self, difficulty):
@@ -19,14 +20,22 @@ class MemoryGame:
 
     def get_list_from_user(self):
         """Prompts the user for a list of numbers and validates them."""
-        user_list = []
-        while len(user_list) < self.difficulty:
+        user_list = os.getenv('MEMORY_GAME_USER_LIST')
+        if user_list:
             try:
-                number = int(input("Enter a number you remember ({} left): ".format(self.difficulty - len(user_list))))
-                user_list.append(number)
+                return [int(num) for num in user_list.split(',')]
             except ValueError:
-                print("Invalid input. Please enter a whole number.")
-        return user_list
+                print("Invalid input from environment variable. Please ensure it is a comma-separated list of integers.")
+                return []
+        else:
+            user_list = []
+            while len(user_list) < self.difficulty:
+                try:
+                    number = int(input("Enter a number you remember ({} left): ".format(self.difficulty - len(user_list))))
+                    user_list.append(number)
+                except ValueError:
+                    print("Invalid input. Please enter a whole number.")
+            return user_list
 
     def is_list_equal(self, list1, list2):
         """Compares two lists for equality."""
@@ -39,3 +48,4 @@ class MemoryGame:
 
         user_list = self.get_list_from_user()
         return self.is_list_equal(sequence, user_list)
+

@@ -1,0 +1,543 @@
+Index: tests/e2e.py
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.BaseRevisionTextPatchEP
+<+>import requests\r\nfrom bs4 import BeautifulSoup  # For basic HTML parsing\r\n\r\ndef test_scores_service(url):\r\n  \"\"\"Tests the score service by fetching the score and validating its format.\"\"\"\r\n  try:\r\n    response = requests.get(url)\r\n    response.raise_for_status()  # Raise an exception for non-200 status codes\r\n  except requests.exceptions.RequestException as e:\r\n    print(f\"Error fetching score: {e}\")\r\n    return False\r\n\r\n  # Assuming the score is displayed within a div with id \"score\"\r\n  soup = BeautifulSoup(response.content, \"html.parser\")\r\n  score_element = soup.find(id=\"score\")\r\n\r\n  if score_element is None:\r\n    print(\"Score element not found in the response.\")\r\n    return False\r\n\r\n  try:\r\n    score = int(score_element.text.strip())\r\n  except ValueError:\r\n    print(\"Score is not a valid number.\")\r\n    return False\r\n\r\n  if not (1 <= score <= 1000):\r\n    print(f\"Score value ({score}) is outside the expected range (1-1000).\")\r\n    return False\r\n\r\n  # Score is valid\r\n  print(f\"Score retrieved successfully: {score}\")\r\n  return True\r\n\r\n# Example usage (uncomment to test)\r\n# Replace with the actual URL of your deployed score service\r\n  service_url = \"http://localhost:5000/\"  # Assuming Flask app runs on port 5000\r\n  if test_scores_service(service_url):\r\n    print(\"Score service test passed!\")\r\n  else:\r\n    print(\"Score service test failed!\")\r\n\r\n\r\ndef main():\r\n  \"\"\"Calls the score service test and returns an exit code based on the result.\"\"\"\r\n  # Replace with the actual URL of your deployed score service\r\n  service_url = \"http://localhost:5000/\"  # Assuming Flask app runs on port 5000\r\n  if test_scores_service(service_url):\r\n    return 0  # Test passed\r\n  else:\r\n    return -1  # Test failed\r\n\r\nif __name__ == \"__main__\":\r\n  exit_code = main()\r\n  exit(exit_code)\r\n
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/tests/e2e.py b/tests/e2e.py
+--- a/tests/e2e.py	
++++ b/tests/e2e.py	
+@@ -4,7 +4,7 @@
+ def test_scores_service(url):
+   """Tests the score service by fetching the score and validating its format."""
+   try:
+-    response = requests.get(url)
++    response = requests.get("http://localhost:5000/")
+     response.raise_for_status()  # Raise an exception for non-200 status codes
+   except requests.exceptions.RequestException as e:
+     print(f"Error fetching score: {e}")
+@@ -34,22 +34,8 @@
+ 
+ # Example usage (uncomment to test)
+ # Replace with the actual URL of your deployed score service
+-  service_url = "http://localhost:5000/"  # Assuming Flask app runs on port 5000
+-  if test_scores_service(service_url):
+-    print("Score service test passed!")
+-  else:
+-    print("Score service test failed!")
+-
+-
+-def main():
+-  """Calls the score service test and returns an exit code based on the result."""
+-  # Replace with the actual URL of your deployed score service
+-  service_url = "http://localhost:5000/"  # Assuming Flask app runs on port 5000
+-  if test_scores_service(service_url):
+-    return 0  # Test passed
+-  else:
+-    return -1  # Test failed
+-
+-if __name__ == "__main__":
+-  exit_code = main()
+-  exit(exit_code)
++# service_url = "http://localhost:5000/"  # Assuming Flask app runs on port 5000
++if test_scores_service("http://localhost:5000/"):
++  print("Score service test passed!")
++else:
++  print("Score service test fail")
+Index: Jenkinsfile
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.BaseRevisionTextPatchEP
+<+>pipeline {\r\n    agent any  // Run on any available agent\r\n\r\n    stages {\r\n        stage('Checkout') {\r\n            steps {\r\n                git branch: 'master', url: 'https://github.com/Tannvi/WorldOfGames'  // Replace with your details\r\n            }\r\n        }\r\n\r\n        stage('Build Docker Image') {\r\n            steps {\r\n                sh 'docker build -t scoreservice:latest .'  // Build the image with tag \"scoreservice:latest\"\r\n            }\r\n        }\r\n\r\n        stage('Run Application (Test)') {\r\n            steps {\r\n                script {\r\n                    def containerName = 'scoreservice-test'\r\n                    docker run(\r\n                        // Mount current directory as /app and a dummy Scores.txt\r\n                        \"-v ${pwd()}:/app\",\r\n                        \"-v ${pwd()}/Scores.txt:/app/Scores.txt\",\r\n                        \"-d\",  // Run in detached mode\r\n                        \"-p 8777:8777\",  // Map container port 8777 to host port 8777\r\n                        \"--name $containerName\",\r\n                        \"scoreservice:latest\"  // Use the built image\r\n                    )\r\n\r\n                    // Delay to allow app startup (adjust if needed)\r\n                    sleep 5\r\n\r\n                    // Run tests (assuming e2e.py is in the workspace)\r\n                    sh 'python e2e.py http://localhost:8777'\r\n\r\n                    // Stop the container\r\n                    sh \"docker stop $containerName\"\r\n                }\r\n            }\r\n        }\r\n\r\n        stage('Finalize (Optional)') {\r\n            steps {\r\n                script {\r\n                    // Get build result (success/failure) from previous stage\r\n                    def testResult = currentBuild.result\r\n\r\n                    if (testResult == 'SUCCESS') {\r\n                        // Push image to Docker Hub (replace with your details)\r\n                        sh 'docker login -u tannvi -p Tannvisingh@19'\r\n                        sh 'docker push tannvi/scoreservice:latest'\r\n                    } else {\r\n                        // Handle failure (e.g., send notification)\r\n                        echo 'Tests failed. Image not pushed to Docker Hub.'\r\n                    }\r\n                }\r\n            }\r\n        }\r\n    }\r\n}\r\n
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/Jenkinsfile b/Jenkinsfile
+--- a/Jenkinsfile	
++++ b/Jenkinsfile	
+@@ -1,3 +1,64 @@
++pipeline {
++    agent any  // Run on any available agent
++
++    stages {
++        stage('Checkout') {
++            steps {
++                git branch: 'main', credentialsId: 'your-git-credentials-id', url: 'https://github.com/your-username/your-repo.git'  // Replace with your details
++            }
++        }
++
++        stage('Build Docker Image') {
++            steps {
++                sh 'docker build -t scoreservice:latest .'  // Build the image with tag "scoreservice:latest"
++            }
++        }
++
++        stage('Run Application (Test)') {
++            steps {
++                script {
++                    def containerName = 'scoreservice-test'
++                    docker run(
++                        // Mount current directory as /app and a dummy Scores.txt
++                        "-v ${pwd()}:/app",
++                        "-v ${pwd()}/Scores.txt:/app/Scores.txt",
++                        "-d",  // Run in detached mode
++                        "-p 8777:8777",  // Map container port 8777 to host port 8777
++                        "--name $containerName",
++                        "scoreservice:latest"  // Use the built image
++                    )
++
++                    // Delay to allow app startup (adjust if needed)
++                    sleep 5
++
++                    // Run tests (assuming e2e.py is in the workspace)
++                    sh 'python e2e.py http://localhost:8777'
++
++                    // Stop the container
++                    sh "docker stop $containerName"
++                }
++            }
++        }
++
++        stage('Finalize (Optional)') {
++            steps {
++                script {
++                    // Get build result (success/failure) from previous stage
++                    def testResult = currentBuild.result
++
++                    if (testResult == 'SUCCESS') {
++                        // Push image to Docker Hub (replace with your details)
++                        sh 'docker login -u your-dockerhub-username -p your-dockerhub-password'
++                        sh 'docker push your-dockerhub-username/scoreservice:latest'
++                    } else {
++                        // Handle failure (e.g., send notification)
++                        echo 'Tests failed. Image not pushed to Docker Hub.'
++                    }
++                }
++            }
++        }
++    }
++}
+ pipeline {
+     agent any  // Run on any available agent
+ 
+Index: Scores.txt
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/Scores.txt b/Scores.txt
+--- a/Scores.txt	
++++ b/Scores.txt	
+@@ -1,0 +1,1 @@
++896
+\ No newline at end of file
+Index: MainScores.py
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.BaseRevisionTextPatchEP
+<+>from Score import read_score, BAD_RETURN_CODE\r\nfrom flask import Flask, render_template\r\n\r\napp = Flask(__name__)\r\n\r\n@app.route(\"/\")\r\ndef score_server():\r\n  \"\"\"\r\n  Reads the score from scores.txt and returns an HTML template.\r\n\r\n  Returns:\r\n      str: Rendered HTML template with the score or an error message.\r\n  \"\"\"\r\n  try:\r\n    with open(\"Scores.txt\", \"r\") as f:\r\n      score = int(f.read())\r\n  except (FileNotFoundError, ValueError) as e:\r\n    error = f\"Error reading score: {e}\"\r\n    return render_template(\"score.html\", score=None, error=error)\r\n\r\n  return render_template(\"score.html\", score=score, error=None)\r\n\r\nif __name__ == \"__main__\":\r\n  app.run(debug=True)\r\n\r\n\r\n
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/MainScores.py b/MainScores.py
+--- a/MainScores.py	
++++ b/MainScores.py	
+@@ -23,4 +23,3 @@
+ if __name__ == "__main__":
+   app.run(debug=True)
+ 
+-
+Index: .idea/workspace.xml
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.BaseRevisionTextPatchEP
+<+><?xml version=\"1.0\" encoding=\"UTF-8\"?>\r\n<project version=\"4\">\r\n  <component name=\"AutoImportSettings\">\r\n    <option name=\"autoReloadType\" value=\"SELECTIVE\" />\r\n  </component>\r\n  <component name=\"ChangeListManager\">\r\n    <list default=\"true\" id=\"cac1de24-725a-414c-9914-96cbdfdae249\" name=\"Changes\" comment=\"\">\r\n      <change afterPath=\"$PROJECT_DIR$/Dockerfile\" afterDir=\"false\" />\r\n      <change afterPath=\"$PROJECT_DIR$/Jenkinsfile\" afterDir=\"false\" />\r\n      <change afterPath=\"$PROJECT_DIR$/Scores.txt\" afterDir=\"false\" />\r\n      <change afterPath=\"$PROJECT_DIR$/docker-compose.yml\" afterDir=\"false\" />\r\n      <change afterPath=\"$PROJECT_DIR$/docker-run-command.txt\" afterDir=\"false\" />\r\n      <change afterPath=\"$PROJECT_DIR$/tests/e2e.py\" afterDir=\"false\" />\r\n      <change beforePath=\"$PROJECT_DIR$/.idea/WorldOfGames.iml\" beforeDir=\"false\" afterPath=\"$PROJECT_DIR$/.idea/WorldOfGames.iml\" afterDir=\"false\" />\r\n      <change beforePath=\"$PROJECT_DIR$/.idea/misc.xml\" beforeDir=\"false\" afterPath=\"$PROJECT_DIR$/.idea/misc.xml\" afterDir=\"false\" />\r\n      <change beforePath=\"$PROJECT_DIR$/.idea/workspace.xml\" beforeDir=\"false\" afterPath=\"$PROJECT_DIR$/.idea/workspace.xml\" afterDir=\"false\" />\r\n      <change beforePath=\"$PROJECT_DIR$/CurrencyRouletteGame.py\" beforeDir=\"false\" afterPath=\"$PROJECT_DIR$/CurrencyRouletteGame.py\" afterDir=\"false\" />\r\n      <change beforePath=\"$PROJECT_DIR$/GuessGame.py\" beforeDir=\"false\" afterPath=\"$PROJECT_DIR$/GuessGame.py\" afterDir=\"false\" />\r\n      <change beforePath=\"$PROJECT_DIR$/Live.py\" beforeDir=\"false\" afterPath=\"$PROJECT_DIR$/Live.py\" afterDir=\"false\" />\r\n      <change beforePath=\"$PROJECT_DIR$/MainGame.py\" beforeDir=\"false\" afterPath=\"$PROJECT_DIR$/MainGame.py\" afterDir=\"false\" />\r\n      <change beforePath=\"$PROJECT_DIR$/MainScores.py\" beforeDir=\"false\" afterPath=\"$PROJECT_DIR$/MainScores.py\" afterDir=\"false\" />\r\n      <change beforePath=\"$PROJECT_DIR$/MemoryGame.py\" beforeDir=\"false\" afterPath=\"$PROJECT_DIR$/MemoryGame.py\" afterDir=\"false\" />\r\n      <change beforePath=\"$PROJECT_DIR$/Score.py\" beforeDir=\"false\" afterPath=\"$PROJECT_DIR$/Score.py\" afterDir=\"false\" />\r\n      <change beforePath=\"$PROJECT_DIR$/Utils.py\" beforeDir=\"false\" afterPath=\"$PROJECT_DIR$/Utils.py\" afterDir=\"false\" />\r\n      <change beforePath=\"$PROJECT_DIR$/score.html\" beforeDir=\"false\" afterPath=\"$PROJECT_DIR$/score.html\" afterDir=\"false\" />\r\n    </list>\r\n    <option name=\"SHOW_DIALOG\" value=\"false\" />\r\n    <option name=\"HIGHLIGHT_CONFLICTS\" value=\"true\" />\r\n    <option name=\"HIGHLIGHT_NON_ACTIVE_CHANGELIST\" value=\"false\" />\r\n    <option name=\"LAST_RESOLUTION\" value=\"IGNORE\" />\r\n  </component>\r\n  <component name=\"FileTemplateManagerImpl\">\r\n    <option name=\"RECENT_TEMPLATES\">\r\n      <list>\r\n        <option value=\"Python Script\" />\r\n      </list>\r\n    </option>\r\n  </component>\r\n  <component name=\"Git.Settings\">\r\n    <option name=\"RECENT_GIT_ROOT_PATH\" value=\"$PROJECT_DIR$\" />\r\n  </component>\r\n  <component name=\"ProblemsViewState\">\r\n    <option name=\"selectedTabId\" value=\"CurrentFile\" />\r\n  </component>\r\n  <component name=\"ProjectColorInfo\">{\r\n  &quot;associatedIndex&quot;: 6\r\n}</component>\r\n  <component name=\"ProjectId\" id=\"2eYWpdVjoiXpDMLWhPfVP3dTF7Z\" />\r\n  <component name=\"ProjectLevelVcsManager\" settingsEditedManually=\"true\" />\r\n  <component name=\"ProjectViewState\">\r\n    <option name=\"hideEmptyMiddlePackages\" value=\"true\" />\r\n    <option name=\"showLibraryContents\" value=\"true\" />\r\n  </component>\r\n  <component name=\"PropertiesComponent\">{\r\n  &quot;keyToString&quot;: {\r\n    &quot;Python.CurrencyRouletteGame.executor&quot;: &quot;Run&quot;,\r\n    &quot;Python.GuessGame.executor&quot;: &quot;Run&quot;,\r\n    &quot;Python.Live.executor&quot;: &quot;Run&quot;,\r\n    &quot;Python.MainGame.executor&quot;: &quot;Run&quot;,\r\n    &quot;Python.MainScores.executor&quot;: &quot;Run&quot;,\r\n    &quot;Python.MemoryGame.executor&quot;: &quot;Run&quot;,\r\n    &quot;Python.Score.executor&quot;: &quot;Run&quot;,\r\n    &quot;Python.Utils.executor&quot;: &quot;Run&quot;,\r\n    &quot;Python.main.executor&quot;: &quot;Run&quot;,\r\n    &quot;RunOnceActivity.OpenProjectViewOnStart&quot;: &quot;true&quot;,\r\n    &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,\r\n    &quot;git-widget-placeholder&quot;: &quot;master&quot;,\r\n    &quot;last_opened_file_path&quot;: &quot;C:/Users/91741/PycharmProjects&quot;,\r\n    &quot;settings.editor.selected.configurable&quot;: &quot;com.jetbrains.python.configuration.PyActiveSdkModuleConfigurable&quot;\r\n  },\r\n  &quot;keyToStringList&quot;: {\r\n    &quot;ChangesTree.GroupingKeys&quot;: [\r\n    ]\r\n  }\r\n}</component>\r\n  <component name=\"RunManager\" selected=\"Python.main\">\r\n    <configuration name=\"MainScores\" type=\"PythonConfigurationType\" factoryName=\"Python\" nameIsGenerated=\"true\">\r\n      <module name=\"WorldOfGames\" />\r\n      <option name=\"ENV_FILES\" value=\"\" />\r\n      <option name=\"INTERPRETER_OPTIONS\" value=\"\" />\r\n      <option name=\"PARENT_ENVS\" value=\"true\" />\r\n      <envs>\r\n        <env name=\"PYTHONUNBUFFERED\" value=\"1\" />\r\n      </envs>\r\n      <option name=\"SDK_HOME\" value=\"\" />\r\n      <option name=\"WORKING_DIRECTORY\" value=\"$PROJECT_DIR$\" />\r\n      <option name=\"IS_MODULE_SDK\" value=\"true\" />\r\n      <option name=\"ADD_CONTENT_ROOTS\" value=\"true\" />\r\n      <option name=\"ADD_SOURCE_ROOTS\" value=\"true\" />\r\n      <option name=\"SCRIPT_NAME\" value=\"$PROJECT_DIR$/MainScores.py\" />\r\n      <option name=\"PARAMETERS\" value=\"\" />\r\n      <option name=\"SHOW_COMMAND_LINE\" value=\"false\" />\r\n      <option name=\"EMULATE_TERMINAL\" value=\"false\" />\r\n      <option name=\"MODULE_MODE\" value=\"false\" />\r\n      <option name=\"REDIRECT_INPUT\" value=\"false\" />\r\n      <option name=\"INPUT_FILE\" value=\"\" />\r\n      <method v=\"2\" />\r\n    </configuration>\r\n    <configuration name=\"main\" type=\"PythonConfigurationType\" factoryName=\"Python\" nameIsGenerated=\"true\">\r\n      <module name=\"WorldOfGames\" />\r\n      <option name=\"ENV_FILES\" value=\"\" />\r\n      <option name=\"INTERPRETER_OPTIONS\" value=\"\" />\r\n      <option name=\"PARENT_ENVS\" value=\"true\" />\r\n      <envs>\r\n        <env name=\"PYTHONUNBUFFERED\" value=\"1\" />\r\n      </envs>\r\n      <option name=\"SDK_HOME\" value=\"\" />\r\n      <option name=\"SDK_NAME\" value=\"Python 3.12 (Pythonfirst)\" />\r\n      <option name=\"WORKING_DIRECTORY\" value=\"$PROJECT_DIR$\" />\r\n      <option name=\"IS_MODULE_SDK\" value=\"false\" />\r\n      <option name=\"ADD_CONTENT_ROOTS\" value=\"true\" />\r\n      <option name=\"ADD_SOURCE_ROOTS\" value=\"true\" />\r\n      <option name=\"SCRIPT_NAME\" value=\"$PROJECT_DIR$/main.py\" />\r\n      <option name=\"PARAMETERS\" value=\"\" />\r\n      <option name=\"SHOW_COMMAND_LINE\" value=\"false\" />\r\n      <option name=\"EMULATE_TERMINAL\" value=\"false\" />\r\n      <option name=\"MODULE_MODE\" value=\"false\" />\r\n      <option name=\"REDIRECT_INPUT\" value=\"false\" />\r\n      <option name=\"INPUT_FILE\" value=\"\" />\r\n      <method v=\"2\" />\r\n    </configuration>\r\n  </component>\r\n  <component name=\"SharedIndexes\">\r\n    <attachedChunks>\r\n      <set>\r\n        <option value=\"bundled-python-sdk-09665e90c3a7-d3b881c8e49f-com.jetbrains.pycharm.community.sharedIndexes.bundled-PC-233.15026.15\" />\r\n      </set>\r\n    </attachedChunks>\r\n  </component>\r\n  <component name=\"SpellCheckerSettings\" RuntimeDictionaries=\"0\" Folders=\"0\" CustomDictionaries=\"0\" DefaultDictionary=\"application-level\" UseSingleDictionary=\"true\" transferred=\"true\" />\r\n  <component name=\"TaskManager\">\r\n    <task active=\"true\" id=\"Default\" summary=\"Default task\">\r\n      <changelist id=\"cac1de24-725a-414c-9914-96cbdfdae249\" name=\"Changes\" comment=\"\" />\r\n      <created>1712082176420</created>\r\n      <option name=\"number\" value=\"Default\" />\r\n      <option name=\"presentableId\" value=\"Default\" />\r\n      <updated>1712082176420</updated>\r\n    </task>\r\n    <servers />\r\n  </component>\r\n  <component name=\"Vcs.Log.Tabs.Properties\">\r\n    <option name=\"TAB_STATES\">\r\n      <map>\r\n        <entry key=\"MAIN\">\r\n          <value>\r\n            <State />\r\n          </value>\r\n        </entry>\r\n      </map>\r\n    </option>\r\n  </component>\r\n</project>
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/.idea/workspace.xml b/.idea/workspace.xml
+--- a/.idea/workspace.xml	
++++ b/.idea/workspace.xml	
+@@ -4,25 +4,15 @@
+     <option name="autoReloadType" value="SELECTIVE" />
+   </component>
+   <component name="ChangeListManager">
+-    <list default="true" id="cac1de24-725a-414c-9914-96cbdfdae249" name="Changes" comment="">
+-      <change afterPath="$PROJECT_DIR$/Dockerfile" afterDir="false" />
+-      <change afterPath="$PROJECT_DIR$/Jenkinsfile" afterDir="false" />
+-      <change afterPath="$PROJECT_DIR$/Scores.txt" afterDir="false" />
+-      <change afterPath="$PROJECT_DIR$/docker-compose.yml" afterDir="false" />
+-      <change afterPath="$PROJECT_DIR$/docker-run-command.txt" afterDir="false" />
+-      <change afterPath="$PROJECT_DIR$/tests/e2e.py" afterDir="false" />
+-      <change beforePath="$PROJECT_DIR$/.idea/WorldOfGames.iml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/WorldOfGames.iml" afterDir="false" />
+-      <change beforePath="$PROJECT_DIR$/.idea/misc.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/misc.xml" afterDir="false" />
++    <list default="true" id="cac1de24-725a-414c-9914-96cbdfdae249" name="Changes" comment="Committing Dockerfile and Jenkinsfile along with other dependencies">
+       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+       <change beforePath="$PROJECT_DIR$/CurrencyRouletteGame.py" beforeDir="false" afterPath="$PROJECT_DIR$/CurrencyRouletteGame.py" afterDir="false" />
+-      <change beforePath="$PROJECT_DIR$/GuessGame.py" beforeDir="false" afterPath="$PROJECT_DIR$/GuessGame.py" afterDir="false" />
+-      <change beforePath="$PROJECT_DIR$/Live.py" beforeDir="false" afterPath="$PROJECT_DIR$/Live.py" afterDir="false" />
++      <change beforePath="$PROJECT_DIR$/Jenkinsfile" beforeDir="false" afterPath="$PROJECT_DIR$/Jenkinsfile" afterDir="false" />
+       <change beforePath="$PROJECT_DIR$/MainGame.py" beforeDir="false" afterPath="$PROJECT_DIR$/MainGame.py" afterDir="false" />
+       <change beforePath="$PROJECT_DIR$/MainScores.py" beforeDir="false" afterPath="$PROJECT_DIR$/MainScores.py" afterDir="false" />
+-      <change beforePath="$PROJECT_DIR$/MemoryGame.py" beforeDir="false" afterPath="$PROJECT_DIR$/MemoryGame.py" afterDir="false" />
+-      <change beforePath="$PROJECT_DIR$/Score.py" beforeDir="false" afterPath="$PROJECT_DIR$/Score.py" afterDir="false" />
+-      <change beforePath="$PROJECT_DIR$/Utils.py" beforeDir="false" afterPath="$PROJECT_DIR$/Utils.py" afterDir="false" />
+-      <change beforePath="$PROJECT_DIR$/score.html" beforeDir="false" afterPath="$PROJECT_DIR$/score.html" afterDir="false" />
++      <change beforePath="$PROJECT_DIR$/Scores.txt" beforeDir="false" afterPath="$PROJECT_DIR$/Scores.txt" afterDir="false" />
++      <change beforePath="$PROJECT_DIR$/score.html" beforeDir="false" afterPath="$PROJECT_DIR$/templates/score.html" afterDir="false" />
++      <change beforePath="$PROJECT_DIR$/tests/e2e.py" beforeDir="false" afterPath="$PROJECT_DIR$/tests/e2e.py" afterDir="false" />
+     </list>
+     <option name="SHOW_DIALOG" value="false" />
+     <option name="HIGHLIGHT_CONFLICTS" value="true" />
+@@ -37,8 +27,42 @@
+     </option>
+   </component>
+   <component name="Git.Settings">
++    <option name="PUSH_AUTO_UPDATE" value="true" />
++    <option name="PUSH_TAGS">
++      <GitPushTagMode>
++        <option name="argument" value="--follow-tags" />
++        <option name="title" value="Current Branch" />
++      </GitPushTagMode>
++    </option>
++    <option name="RECENT_BRANCH_BY_REPOSITORY">
++      <map>
++        <entry key="$PROJECT_DIR$" value="master" />
++      </map>
++    </option>
+     <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
+   </component>
++  <component name="GitHubPullRequestSearchHistory">{
++  &quot;history&quot;: [
++    {
++      &quot;state&quot;: &quot;OPEN&quot;,
++      &quot;assignee&quot;: &quot;Tannvi&quot;,
++      &quot;author&quot;: &quot;Tannvi&quot;
++    }
++  ],
++  &quot;lastFilter&quot;: {
++  }
++}</component>
++  <component name="GithubPullRequestsUISettings">
++    <option name="selectedUrlAndAccountId">
++      <UrlAndAccount>
++        <option name="accountId" value="267fb431-a33a-4016-9818-119c999e1870" />
++        <option name="url" value="https://github.com/Tannvi/WorldOfGames.git" />
++      </UrlAndAccount>
++    </option>
++  </component>
++  <component name="MarkdownSettingsMigration">
++    <option name="stateVersion" value="1" />
++  </component>
+   <component name="ProblemsViewState">
+     <option name="selectedTabId" value="CurrentFile" />
+   </component>
+@@ -61,15 +85,17 @@
+     &quot;Python.MemoryGame.executor&quot;: &quot;Run&quot;,
+     &quot;Python.Score.executor&quot;: &quot;Run&quot;,
+     &quot;Python.Utils.executor&quot;: &quot;Run&quot;,
++    &quot;Python.e2e.executor&quot;: &quot;Run&quot;,
+     &quot;Python.main.executor&quot;: &quot;Run&quot;,
+     &quot;RunOnceActivity.OpenProjectViewOnStart&quot;: &quot;true&quot;,
+     &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
+     &quot;git-widget-placeholder&quot;: &quot;master&quot;,
+     &quot;last_opened_file_path&quot;: &quot;C:/Users/91741/PycharmProjects&quot;,
+-    &quot;settings.editor.selected.configurable&quot;: &quot;com.jetbrains.python.configuration.PyActiveSdkModuleConfigurable&quot;
++    &quot;settings.editor.selected.configurable&quot;: &quot;configurable.group.appearance&quot;
+   },
+   &quot;keyToStringList&quot;: {
+     &quot;ChangesTree.GroupingKeys&quot;: [
++      &quot;directory&quot;
+     ]
+   }
+ }</component>
+@@ -136,6 +162,23 @@
+       <option name="presentableId" value="Default" />
+       <updated>1712082176420</updated>
+     </task>
++    <task id="LOCAL-00001" summary="Committing Dockerfile and Jenkinsfile along with other dependencies">
++      <option name="closed" value="true" />
++      <created>1716800351095</created>
++      <option name="number" value="00001" />
++      <option name="presentableId" value="LOCAL-00001" />
++      <option name="project" value="LOCAL" />
++      <updated>1716800351095</updated>
++    </task>
++    <task id="LOCAL-00002" summary="Committing Dockerfile and Jenkinsfile along with other dependencies">
++      <option name="closed" value="true" />
++      <created>1716800574094</created>
++      <option name="number" value="00002" />
++      <option name="presentableId" value="LOCAL-00002" />
++      <option name="project" value="LOCAL" />
++      <updated>1716800574095</updated>
++    </task>
++    <option name="localTasksCounter" value="3" />
+     <servers />
+   </component>
+   <component name="Vcs.Log.Tabs.Properties">
+@@ -149,4 +192,8 @@
+       </map>
+     </option>
+   </component>
++  <component name="VcsManagerConfiguration">
++    <MESSAGE value="Committing Dockerfile and Jenkinsfile along with other dependencies" />
++    <option name="LAST_COMMIT_MESSAGE" value="Committing Dockerfile and Jenkinsfile along with other dependencies" />
++  </component>
+ </project>
+\ No newline at end of file
+Index: MainGame.py
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.BaseRevisionTextPatchEP
+<+>from Live import load_game, welcome\r\n\r\n# Welcome the user\r\nprint(welcome(\"Guy\"))\r\n\r\n# Load the game and get user choices\r\ngame_choice, difficulty_level = load_game()\r\n\r\n# Print user selections (optional)\r\nprint(f\"\\nYou chose game {game_choice} with difficulty {difficulty_level}\")\r\n\r\n# Call the specific game function based on the user's choice (not implemented here)\r\n# This part would likely involve additional logic and potentially other Python files\r\n# for each game\r\n\r\n# Example (placeholder):\r\nif game_choice == 1:\r\n  print(\"Starting Memory Game...\")\r\n  # Implement Memory Game logic here\r\nelse:\r\n  print(f\"Game {game_choice} is not yet implemented.\")\r\n
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/MainGame.py b/MainGame.py
+--- a/MainGame.py	
++++ b/MainGame.py	
+@@ -1,21 +1,87 @@
+-from Live import load_game, welcome
++from datetime import time
++from random import shuffle
++import time
++
++
++class MainGame:
++    """
++  This class represents the core logic for a generic memory game.
++  """
++
++    def __init__(self, difficulty_level):
++        """
++    Initializes the game with a specified difficulty level.
++
++    Args:
++      difficulty_level (int): The difficulty level (1-5). Higher levels have more elements.
++    """
++        self.difficulty_level = difficulty_level
++        self.sequence = []
++        self.user_guess = []
++
++    def generate_sequence(self):
++        """
++    Generates a random sequence of numbers based on the difficulty level.
++    """
++        # Adjust range based on difficulty (e.g., 1-5 for difficulty 1, 1-10 for difficulty 2)
++        numbers = list(range(1, self.difficulty_level + 6))
++        shuffle(numbers)
++        self.sequence = numbers[:self.difficulty_level]  # Select first N elements
++
++    def get_sequence(self):
++        """
++    Returns the generated sequence.
++    """
++        return self.sequence
+ 
+-# Welcome the user
+-print(welcome("Guy"))
++    def get_user_guess(self):
++        """
++    Returns the user's guess as a list of numbers.
++    """
++        return self.user_guess
+ 
+-# Load the game and get user choices
+-game_choice, difficulty_level = load_game()
++    def take_user_guess(self):
++        """
++    Prompts the user to enter their guess for the sequence.
++    """
++        print("Please enter your guess for the sequence (separated by spaces):")
++        user_input = input("> ").strip()
++        try:
++            self.user_guess = [int(x) for x in user_input.split()]
++        except ValueError:
++            print("Invalid input. Please enter numbers separated by spaces.")
++            self.take_user_guess()  # Recursive call to get valid input
+ 
+-# Print user selections (optional)
+-print(f"\nYou chose game {game_choice} with difficulty {difficulty_level}")
++    def check_guess(self):
++        """
++    Compares the user's guess with the generated sequence and returns True if they match.
++    """
++        return self.user_guess == self.sequence
+ 
+-# Call the specific game function based on the user's choice (not implemented here)
+-# This part would likely involve additional logic and potentially other Python files
+-# for each game
++    def play(self):
++        """
++    Starts the memory game loop.
+ 
+-# Example (placeholder):
+-if game_choice == 1:
+-  print("Starting Memory Game...")
+-  # Implement Memory Game logic here
++    Returns:
++      bool: True if the user wins, False otherwise.
++    """
++        self.generate_sequence()
++        print("Here is the sequence (remember the order):")
++
++        # Display the sequence for 1 second (adjust delay if needed)
++        for number in self.sequence:
++            print(number, end=" ")
++            time.sleep(1)  # Import time module if needed
++        print("\n")
++
++        self.take_user_guess()
++        return self.check_guess()
++
++
++# Example usage (uncomment to test)
++difficulty_level = 3
++game = MainGame(difficulty_level)
++if game.play():
++    print("Congratulations! You won the game!")
+ else:
+-  print(f"Game {game_choice} is not yet implemented.")
++    print("Better luck next time!")
+Index: CurrencyRouletteGame.py
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.BaseRevisionTextPatchEP
+<+>import random\r\nimport requests\r\n\r\nclass CurrencyRouletteGame:\r\n    def __init__(self, difficulty):\r\n        self.difficulty = difficulty\r\n\r\n    def get_exchange_rate(self):\r\n        \"\"\"Fetches the current USD to ILS exchange rate from an API.\"\"\"\r\n        url = \"https://api.exchangerate.host/latest?base=USD&symbols=ILS\"\r\n        response = requests.get(url)\r\n        response.raise_for_status()  # Raise an error for non-200 status codes\r\n        data = response.json()\r\n        return data[\"rates\"][\"ILS\"]\r\n\r\n    def get_money_interval(self):\r\n        \"\"\"Generates a random amount of USD and calculates the ILS interval.\"\"\"\r\n        amount_usd = random.randint(1, 100)\r\n        exchange_rate = self.get_exchange_rate()\r\n        amount_ils = amount_usd * exchange_rate\r\n        interval_width = 5 - self.difficulty\r\n        return (amount_ils - interval_width, amount_ils + interval_width)\r\n\r\n    def get_guess_from_user(self, amount_usd):\r\n        \"\"\"Prompts the user for a guess in ILS and validates it.\"\"\"\r\n        while True:\r\n            try:\r\n                guess_ils = float(input(f\"Guess the value of ${amount_usd:.2f} in ILS: \"))\r\n                return guess_ils\r\n            except ValueError:\r\n                print(\"Invalid input. Please enter a number.\")\r\n\r\n    def play(self):\r\n        \"\"\"Runs the game loop.\"\"\"\r\n        interval = self.get_money_interval()\r\n        amount_usd = random.randint(1, 100)  # Regenerate a new amount of USD\r\n\r\n        guess_ils = self.get_guess_from_user(amount_usd)\r\n        correct_ils = amount_usd * self.get_exchange_rate()\r\n\r\n        return interval[0] <= guess_ils <= interval[1]\r\n\r\n
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/CurrencyRouletteGame.py b/CurrencyRouletteGame.py
+--- a/CurrencyRouletteGame.py	
++++ b/CurrencyRouletteGame.py	
+@@ -1,42 +1,102 @@
+ import random
+-import requests
++import requests  # Import requests library for API calls
+ 
+ class CurrencyRouletteGame:
+-    def __init__(self, difficulty):
+-        self.difficulty = difficulty
++  """
++  This class represents the Currency Roulette game.
++  """
++
++  def __init__(self, difficulty):
++    """
++    Initializes the game with a difficulty level (1-5).
++
++    Args:
++      difficulty (int): The difficulty level (1-5). Higher levels have smaller intervals.
++    """
++    self.difficulty = difficulty
++    self.api_url = "https://api.exchangerate.host/latest?base=USD&symbols=ILS"  # Replace with your API if needed
+ 
+-    def get_exchange_rate(self):
+-        """Fetches the current USD to ILS exchange rate from an API."""
+-        url = "https://api.exchangerate.host/latest?base=USD&symbols=ILS"
+-        response = requests.get(url)
+-        response.raise_for_status()  # Raise an error for non-200 status codes
+-        data = response.json()
+-        return data["rates"]["ILS"]
++  def get_exchange_rate(self):
++    """
++    Fetches the current exchange rate from USD to ILS using an API.
++
++    Returns:
++      float: The exchange rate (USD/ILS) or None if error occurs.
++    """
++    try:
++      response = requests.get(self.api_url)
++      data = response.json()
++      print(data)
++      return data["rates"]["ILS"]
++    except requests.exceptions.RequestException as e:
++      print(f"Error fetching exchange rate: {e}")
++      return None
+ 
+-    def get_money_interval(self):
+-        """Generates a random amount of USD and calculates the ILS interval."""
+-        amount_usd = random.randint(1, 100)
+-        exchange_rate = self.get_exchange_rate()
+-        amount_ils = amount_usd * exchange_rate
+-        interval_width = 5 - self.difficulty
+-        return (amount_ils - interval_width, amount_ils + interval_width)
++  def get_money_interval(self):
++    """
++    Generates a random USD amount and calculates the corresponding ILS interval based on difficulty.
++
++    Returns:
++      tuple: (USD amount, lower bound ILS, upper bound ILS) or None if error occurs.
++    """
++    exchange_rate = self.get_exchange_rate()
++    if exchange_rate is None:
++      return None
++
++    # Generate random USD amount
++    amount_usd = random.randint(1, 100)
++
++    # Calculate interval based on difficulty
++    interval_range = 5 - self.difficulty
++    lower_bound_ils = amount_usd * exchange_rate - interval_range
++    upper_bound_ils = amount_usd * exchange_rate + interval_range
++
++    return amount_usd, lower_bound_ils, upper_bound_ils
+ 
+-    def get_guess_from_user(self, amount_usd):
+-        """Prompts the user for a guess in ILS and validates it."""
+-        while True:
+-            try:
+-                guess_ils = float(input(f"Guess the value of ${amount_usd:.2f} in ILS: "))
+-                return guess_ils
+-            except ValueError:
+-                print("Invalid input. Please enter a number.")
++  def get_guess_from_user(self, amount_usd):
++    """
++    Prompts the user to enter a guess for the ILS equivalent of the given USD amount.
++
++    Args:
++      amount_usd (int): The USD amount to convert.
++
++    Returns:
++      float: The user's guess for the ILS equivalent, or None if invalid input.
++    """
++    while True:
++      try:
++        user_guess = float(input(f"Enter your guess for the value of ${amount_usd} in ILS: "))
++        return user_guess
++      except ValueError:
++        print("Invalid input. Please enter a number.")
+ 
+-    def play(self):
+-        """Runs the game loop."""
+-        interval = self.get_money_interval()
+-        amount_usd = random.randint(1, 100)  # Regenerate a new amount of USD
++  def play(self):
++    """
++    Plays a round of the Currency Roulette game.
++
++    Returns:
++      bool: True if the user wins, False otherwise.
++    """
++    amount_usd, lower_bound_ils, upper_bound_ils = self.get_money_interval()
++    if amount_usd is None:
++      return False  # Error occurred
++
++    print(f"I'm thinking of a USD amount between 1 and 100. Guess its equivalent in ILS!")
++
++    user_guess = self.get_guess_from_user(amount_usd)
++    if user_guess is None:
++      return False  # Invalid input
+ 
+-        guess_ils = self.get_guess_from_user(amount_usd)
+-        correct_ils = amount_usd * self.get_exchange_rate()
++    # Check if guess is within the interval based on difficulty
++    is_correct = lower_bound_ils <= user_guess <= upper_bound_ils
+ 
+-        return interval[0] <= guess_ils <= interval[1]
++    if is_correct:
++      print(f"Congratulations! You guessed the correct value!")
++    else:
++      print(f"Sorry, the correct value was between {lower_bound_ils:.2f} and {upper_bound_ils:.2f} ILS.")
++
++    return is_correct
++
++
++
+ 

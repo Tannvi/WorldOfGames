@@ -1,15 +1,15 @@
+import os
 from MemoryGame import MemoryGame
 from GuessGame import GuessGame
 from CurrencyRouletteGame import CurrencyRouletteGame
 
-
-# from Score import difficulty
-
-
 def welcome(name):
     """Greets the user by name and welcomes them to the World of Games."""
-    return f"Hello {name} and welcome to the World of Games (WoG).\nHere you can find many cool games to play."
-
+    try:
+        user_name = input("Enter your name (or press Enter to continue): ")
+    except EOFError:
+        user_name = os.getenv('USER_NAME', 'default_user')
+        print(f"Hello {user_name} and welcome to the World of Games (WoG).\nHere you can find many cool games to play.")
 
 def load_game():
     """Prompts user for game selection and difficulty level, then starts the chosen game."""
@@ -18,27 +18,36 @@ def load_game():
     print("2. Guess Game - guess a number and see if you chose like the computer")
     print("3. Currency Roulette - try and guess the value of a random amount of USD in ILS")
 
-    while True:
-        try:
-            game_choice = int(input("Enter game number (1-3): "))
-            if 1 <= game_choice <= 3:
-                break
-            else:
-                print("Invalid game choice. Please enter a number between 1 and 3.")
-        except ValueError:
-            print("Invalid input. Please enter a number.")
+    game_choice = os.getenv('GAME_CHOICE')
+    difficulty_level = os.getenv('DIFFICULTY_LEVEL')
+
+    if not game_choice:
+        while True:
+            try:
+                game_choice = int(input("Enter game number (1-3): "))
+                if 1 <= game_choice <= 3:
+                    break
+                else:
+                    print("Invalid game choice. Please enter a number between 1 and 3.")
+            except ValueError:
+                print("Invalid input. Please enter a number.")
+    else:
+        game_choice = int(game_choice)
 
     print("\nPlease choose game difficulty from 1 to 5:")
 
-    while True:
-        try:
-            difficulty_level = int(input("Enter difficulty level (1-5): "))
-            if 1 <= difficulty_level <= 5:
-                break
-            else:
-                print("Invalid difficulty level. Please enter a number between 1 and 5.")
-        except ValueError:
-            print("Invalid input. Please enter a number.")
+    if not difficulty_level:
+        while True:
+            try:
+                difficulty_level = int(input("Enter difficulty level (1-5): "))
+                if 1 <= difficulty_level <= 5:
+                    break
+                else:
+                    print("Invalid difficulty level. Please enter a number between 1 and 5.")
+            except ValueError:
+                print("Invalid input. Please enter a number.")
+    else:
+        difficulty_level = int(difficulty_level)
 
     # Start the chosen game based on selection
     if game_choice == 1:
@@ -52,15 +61,10 @@ def load_game():
         return  # Exit the function if an invalid choice is made internally
 
     # Play the game
-
-    # Check if the user won the game (replace with your winning condition)
     win = game.play()
     if win:
         try:
-            # Import add_score function for better modularity
             from Score import add_score
-
-            # User won, call add_score function (replace game_score with the actual score obtained)
             add_score(difficulty_level)
             print("Congratulations! You won and your score has been updated.")
         except (ImportError, FileNotFoundError, ValueError) as e:
