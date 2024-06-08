@@ -48,7 +48,7 @@ pipeline {
                     sleep 5
 
                     // Check if application is running
-                    def maxRetries = 10
+                    def maxRetries = 20
                     def retryCount = 0
                     def appRunning = false
 
