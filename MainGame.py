@@ -1,5 +1,6 @@
 from Live import load_game, welcome
 from MainScores import score_server, app
+import os
 
 welcome('name')
 
