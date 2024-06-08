@@ -3,7 +3,7 @@ pipeline {
 
     environment {
         USER_NAME = 'Tannvi'
-        GAME_CHOICE = '1'
+        GAME_CHOICE = '2'
         DIFFICULTY_LEVEL = '1'
         MEMORY_GAME_USER_LIST = '1,2,3'
         USER_GUESS = '1'
@@ -34,7 +34,7 @@ pipeline {
             steps {
                 script {
                     // Delay to allow app startup (adjust if needed)
-                    sleep 20
+                    sleep 30
                 }
             }
         }
@@ -44,7 +44,7 @@ pipeline {
                 script {
                     def appRunning = false
                     def retryCount = 0
-                    def maxRetries = 10
+                    def maxRetries = 15
 
                     while (retryCount < maxRetries) {
                         if (isUnix()) {
@@ -57,7 +57,7 @@ pipeline {
                             break
                         } else {
                             echo 'Waiting for application to start...'
-                            sleep 5
+                            sleep 10
                             retryCount++
                         }
                     }
