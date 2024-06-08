@@ -3,7 +3,7 @@ pipeline {
 
     environment {
         USER_NAME = 'Tannvi'
-        GAME_CHOICE = '1'
+        GAME_CHOICE = '2'
         DIFFICULTY_LEVEL = '1'
         MEMORY_GAME_USER_LIST = '1,2,3'
         USER_GUESS = '1'
@@ -34,7 +34,7 @@ pipeline {
             steps {
                 script {
                     // Delay to allow app startup (adjust if needed)
-                    sleep 50
+                    sleep 100
                 }
             }
         }
