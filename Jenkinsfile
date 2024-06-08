@@ -1,6 +1,15 @@
 pipeline {
     agent any
 
+   environment {
+        USER_NAME = 'Tannvi'
+        GAME_CHOICE = '1'
+        DIFFICULTY_LEVEL = '1'
+        MEMORY_GAME_USER_LIST = '1,2,3'
+        USER_GUESS = '1'
+        POSTGRES_PASSWORD = 'yourpassword'
+    }
+
     stages {
         stage('Checkout') {
             steps {
