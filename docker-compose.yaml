@@ -25,6 +25,8 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
+    depends_on:
+      - data-loader  # Ensure scoresdata starts before scoreservice
 
   data-loader:
     image: python:3.11-slim  # Use the same Python image as scoreservice
