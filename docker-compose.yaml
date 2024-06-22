@@ -14,7 +14,7 @@ services:
       MEMORY_GAME_USER_LIST: ${MEMORY_GAME_USER_LIST}
       USER_GUESS: ${USER_GUESS}
     depends_on:
-      - scoresdata  # Ensure scoresdata service starts before scoreservice
+      - scoresdata  # Ensure scoresdata starts before scoreservice
 
   scoresdata:
     image: postgres:latest
@@ -26,6 +26,11 @@ services:
       timeout: 5s
       retries: 5
 
+  data-loader:
+    image: python:3.11-slim  # Use the same Python image as scoreservice
+    volumes:
+      - ./:/app  # Mount the current directory (including Scores.txt) as /app
+    command: ["python", "data_loading_script.py"]  # Replace with your data loading script
 
 volumes:
   scoresdata:
