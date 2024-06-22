@@ -14,13 +14,12 @@ if __name__ == '__main__':
     load_game()
     # Keep the application running
     while True:
-<<<<<<< Updated upstream
+
         time.sleep(400)
-=======
+
         time.sleep(10)
 
 from MainScores import score_server  # Assuming MainScores.py is in the same directory
->>>>>>> Stashed changes
 
 
 from MainScores import score_server  # Assuming MainScores.py is in the same directory
