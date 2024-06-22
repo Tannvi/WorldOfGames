@@ -7,11 +7,12 @@ services:
     ports:
       - "5000:5000"  # Map container port 5000 to host port 5000
     environment:
-      - USER_NAME=${USER_NAME}
-      - GAME_CHOICE=${GAME_CHOICE}
-      - DIFFICULTY_LEVEL=${DIFFICULTY_LEVEL}
-      - MEMORY_GAME_USER_LIST=${MEMORY_GAME_USER_LIST}
-      - USER_GUESS=${USER_GUESS}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      USER_NAME: ${USER_NAME}
+      GAME_CHOICE: ${GAME_CHOICE}
+      DIFFICULTY_LEVEL: ${DIFFICULTY_LEVEL}
+      MEMORY_GAME_USER_LIST: ${MEMORY_GAME_USER_LIST}
+      USER_GUESS: ${USER_GUESS}
     depends_on:
       - scoresdata  # Ensure scoresdata service starts before scoreservice
 
