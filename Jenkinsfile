@@ -48,9 +48,9 @@ pipeline {
 
                     while (retryCount < maxRetries) {
                         if (isUnix()) {
-                            appRunning = sh(script: "curl -s -o /dev/null -w '%{http_code}' http://localhost:5000", returnStatus: true) == 200
+                            appRunning = sh(script: "curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1:5000", returnStatus: true) == 200
                         } else {
-                            appRunning = bat(script: "curl -s -o NUL -w %%{http_code} http://localhost:5000", returnStatus: true) == 200
+                            appRunning = bat(script: "curl -s -o NUL -w %%{http_code} http://127.0.0.1:5000", returnStatus: true) == 200
                         }
                         if (appRunning) {
                             echo 'Application is running'
